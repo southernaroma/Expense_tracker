@@ -1,1 +1,1120 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Southern Aroma - Family Accounts</title><style>body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:#f6f3ee;margin:0;color:#241f1b}main{max-width:720px;margin:auto;padding:24px}.card{background:white;border-radius:20px;padding:22px;margin:14px 0;box-shadow:0 3px 18px #00000012}h1{font-size:27px;margin:0 0 6px}.sub{color:#746b63}input,select,button{width:100%;box-sizing:border-box;padding:13px;margin:7px 0;border:1px solid #ddd;border-radius:12px;font-size:16px}button{background:#7b2d26;color:white;border:0;font-weight:700}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hidden{display:none}.metric{font-size:25px;font-weight:800}.small{font-size:13px;color:#777}.row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee}@media(max-width:520px){.grid{grid-template-columns:1fr}}</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><main><div class="card"><h1>Southern Aroma - Family Accounts</h1><div class="sub">Private family business tracker</div></div><section id="auth" class="card"><h2>Family Login</h2><input id="email" type="email" placeholder="Family email"><input id="password" type="password" placeholder="Password"><input id="name" placeholder="Name (new account only)"><div class="grid"><button onclick="login()">Sign in</button><button onclick="signup()">Create account</button></div><p id="msg" class="small"></p></section><section id="app" class="hidden"><div class="card"><div class="small">This month</div><div id="sales" class="metric">£0.00 sales</div><div id="profit" class="metric">£0.00 estimated profit</div><button onclick="logout()">Sign out</button></div><div class="card"><h2>Today's Sales</h2><div class="grid"><input id="date" type="date"><input id="notes" placeholder="Notes (optional)"></div><div class="grid"><input id="clover" type="number" step="0.01" placeholder="Clover"><input id="uber_eats" type="number" step="0.01" placeholder="Uber Eats"><input id="foodhub" type="number" step="0.01" placeholder="FoodHub"><input id="just_eat" type="number" step="0.01" placeholder="Just Eat"><input id="deliveroo" type="number" step="0.01" placeholder="Deliveroo"><input id="cash" type="number" step="0.01" placeholder="Cash"><input id="stripe" type="number" step="0.01" placeholder="Stripe"></div><button onclick="saveSales()">Save Today's Sales</button></div><div class="card"><h2>Add Business Expense</h2><input id="edate" type="date"><input id="edesc" placeholder="What did you buy? e.g. Chicken, rice, packaging"><div class="grid"><select id="ecat"></select><input id="eamount" type="number" step="0.01" placeholder="Amount £"></div><select id="epay"><option>Bank</option><option>Cash</option><option>Card</option><option>Other</option></select><button onclick="saveExpense()">Save Expense</button><p id="emsg" class="small"></p></div><div class="card"><h2>Monthly Summary</h2><div id="summary"></div></div></section></main><script>const SB_URL='https://hybzvzjlqtutpfdjmlrs.supabase.co';const SB_KEY='sb_publishable_M5calSkAuwig75rCOv6Btg_ksprSBBm';const sb=supabase.createClient(SB_URL,SB_KEY);const biz='71fee22f-ebe8-4fff-a49d-5ff89fe11875';const $=id=>document.getElementById(id);function today(){return new Date().toISOString().slice(0,10)}$('date').value=today();$('edate').value=today();async function signup(){const email=$('email').value.trim().toLowerCase(),password=$('password').value;if(!['southernaromauk@gmail.com','incode.com1234@gmail.com'].includes(email))return msg('Only the authorised family emails can register.');if(password.length<8)return msg('Password must be at least 8 characters.');const r=await sb.auth.signUp({email,password,options:{data:{full_name:$('name').value.trim()}}});if(r.error)return msg(r.error.message);msg('Account created. Check your email if confirmation is requested, then sign in.')}function msg(x){$('msg').textContent=x}async function login(){const r=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(r.error)return msg(r.error.message);await boot()}async function logout(){await sb.auth.signOut();$('auth').classList.remove('hidden');$('app').classList.add('hidden')}async function boot(){const u=await sb.auth.getUser();const user=u.data.user;if(!user)return;const p=await sb.from('profiles').select('full_name,role,business_id').eq('id',user.id).single();if(p.error||p.data?.business_id!==biz)return msg('Your family account is not linked to Southern Aroma yet.');$('auth').classList.add('hidden');$('app').classList.remove('hidden');await loadCategories();await loadSummary()}async function loadCategories(){const r=await sb.from('expense_categories').select('id,name').eq('business_id',biz).eq('active',true).order('name');$('ecat').innerHTML=(r.data||[]).map(x=>'<option value="'+x.id+'">'+x.name+'</option>').join('')}function n(id){return Number($(id).value||0)}async function saveSales(){const u=await sb.auth.getUser();const user=u.data.user;const row={business_id:biz,sales_date:$('date').value,clover:n('clover'),uber_eats:n('uber_eats'),foodhub:n('foodhub'),just_eat:n('just_eat'),deliveroo:n('deliveroo'),cash:n('cash'),stripe:n('stripe'),notes:$('notes').value,created_by:user.id,updated_at:new Date().toISOString()};const r=await sb.from('sales_days').upsert(row,{onConflict:'business_id,sales_date'});if(r.error)return alert(r.error.message);alert('Sales saved successfully.');await loadSummary()}async function saveExpense(){const u=await sb.auth.getUser();const user=u.data.user;const row={business_id:biz,expense_date:$('edate').value,description:$('edesc').value.trim(),category_id:$('ecat').value,amount:n('eamount'),payment_method:$('epay').value,created_by:user.id};if(!row.description||!row.amount)return $('emsg').textContent='Please enter what you bought and the amount.';const r=await sb.from('expenses').insert(row);if(r.error)return $('emsg').textContent=r.error.message;$('emsg').textContent='Expense saved successfully.';$('edesc').value='';$('eamount').value='';await loadSummary()}async function loadSummary(){const d=new Date(),start=new Date(d.getFullYear(),d.getMonth(),1).toISOString().slice(0,10),end=new Date(d.getFullYear(),d.getMonth()+1,0).toISOString().slice(0,10);const s=await sb.from('sales_days').select('clover,uber_eats,foodhub,just_eat,deliveroo,cash,stripe,sales_date').eq('business_id',biz).gte('sales_date',start).lte('sales_date',end);const e=await sb.from('expenses').select('amount,expense_date,description').eq('business_id',biz).gte('expense_date',start).lte('expense_date',end);const total=(s.data||[]).reduce((a,x)=>a+['clover','uber_eats','foodhub','just_eat','deliveroo','cash','stripe'].reduce((b,k)=>b+Number(x[k]||0),0),0);const exp=(e.data||[]).reduce((a,x)=>a+Number(x.amount||0),0);$('sales').textContent='£'+total.toFixed(2)+' sales';$('profit').textContent='£'+(total-exp).toFixed(2)+' estimated profit';$('summary').innerHTML='<div class="row"><span>Sales</span><b>£'+total.toFixed(2)+'</b></div><div class="row"><span>Expenses</span><b>£'+exp.toFixed(2)+'</b></div><div class="row"><span>Estimated profit</span><b>£'+(total-exp).toFixed(2)+'</b></div><div class="small" style="margin-top:10px">Platform fees will be added in the next release.</div>'}sb.auth.getSession().then(({data})=>{if(data.session)boot()})</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Southern Aroma - Family Accounts</title>
+
+<style>
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:#f6f3ee;
+  margin:0;
+  color:#241f1b
+}
+main{
+  max-width:760px;
+  margin:auto;
+  padding:20px
+}
+.card{
+  background:#fff;
+  border-radius:20px;
+  padding:22px;
+  margin:14px 0;
+  box-shadow:0 3px 18px #00000012
+}
+h1{font-size:27px;margin:0 0 6px}
+h2{margin-top:0}
+.sub,.small{color:#746b63}
+
+input,select,button{
+  width:100%;
+  box-sizing:border-box;
+  padding:13px;
+  margin:7px 0;
+  border:1px solid #ddd;
+  border-radius:12px;
+  font-size:16px
+}
+
+button{
+  background:#7b2d26;
+  color:#fff;
+  border:0;
+  font-weight:700;
+  cursor:pointer
+}
+
+button.secondary{
+  background:#eee;
+  color:#241f1b
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px
+}
+
+.hidden{display:none}
+
+.metric{
+  font-size:25px;
+  font-weight:800;
+  margin:5px 0
+}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+  padding:9px 0;
+  border-bottom:1px solid #eee
+}
+
+.success{color:#236b3b}
+.error{color:#a12820}
+
+@media(max-width:520px){
+  .grid{grid-template-columns:1fr}
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+<main>
+
+<div class="card">
+  <h1>Southern Aroma - Family Accounts</h1>
+  <div class="sub">Private family business tracker</div>
+</div>
+
+<section id="auth" class="card">
+
+  <h2>Family Login</h2>
+
+  <input
+    id="email"
+    type="email"
+    autocomplete="email"
+    placeholder="Family email"
+  >
+
+  <input
+    id="password"
+    type="password"
+    autocomplete="current-password"
+    placeholder="Password"
+  >
+
+  <input
+    id="name"
+    autocomplete="name"
+    placeholder="Name (new account only)"
+  >
+
+  <div class="grid">
+    <button onclick="login()">Sign in</button>
+    <button onclick="signup()">Create account</button>
+  </div>
+
+  <p id="msg" class="small"></p>
+
+</section>
+
+<section id="app" class="hidden">
+
+<div class="card">
+
+  <div class="small">This month</div>
+
+  <div id="sales" class="metric">
+    £0.00 sales
+  </div>
+
+  <div id="expenses" class="metric">
+    £0.00 expenses
+  </div>
+
+  <div id="fees" class="metric">
+    £0.00 platform fees
+  </div>
+
+  <div id="profit" class="metric">
+    £0.00 estimated profit
+  </div>
+
+  <button class="secondary" onclick="logout()">
+    Sign out
+  </button>
+
+</div>
+
+
+<!-- SALES -->
+
+<div class="card">
+
+<h2>Today's Sales</h2>
+
+<div class="grid">
+
+<input id="date" type="date">
+
+<input
+  id="notes"
+  placeholder="Notes (optional)"
+>
+
+</div>
+
+<div class="grid">
+
+<input
+  id="clover"
+  type="number"
+  step="0.01"
+  min="0"
+  placeholder="Clover £"
+>
+
+<input
+  id="uber_eats"
+  type="number"
+  step="0.01"
+  min="0"
+  placeholder="Uber Eats £"
+>
+
+<input
+  id="foodhub"
+  type="number"
+  step="0.01"
+  min="0"
+  placeholder="FoodHub £"
+>
+
+<input
+  id="just_eat"
+  type="number"
+  step="0.01"
+  min="0"
+  placeholder="Just Eat £"
+>
+
+<input
+  id="deliveroo"
+  type="number"
+  step="0.01"
+  min="0"
+  placeholder="Deliveroo £"
+>
+
+<input
+  id="cash"
+  type="number"
+  step="0.01"
+  min="0"
+  placeholder="Cash £"
+>
+
+<input
+  id="stripe"
+  type="number"
+  step="0.01"
+  min="0"
+  placeholder="Stripe £"
+>
+
+</div>
+
+<button onclick="saveSales()">
+Save Today's Sales
+</button>
+
+<p id="salesmsg" class="small"></p>
+
+</div>
+
+
+<!-- PLATFORM FEES -->
+
+<div class="card">
+
+<h2>Platform Fees</h2>
+
+<div class="grid">
+
+<input id="fdate" type="date">
+
+<select id="fplatform">
+<option>Uber Eats</option>
+<option>FoodHub</option>
+<option>Just Eat</option>
+<option>Deliveroo</option>
+<option>Other</option>
+</select>
+
+<input
+  id="famount"
+  type="number"
+  step="0.01"
+  min="0"
+  placeholder="Fee amount £"
+>
+
+<input
+  id="fnotes"
+  placeholder="Notes (optional)"
+>
+
+</div>
+
+<button onclick="saveFee()">
+Save Platform Fee
+</button>
+
+<p id="fmsg" class="small"></p>
+
+</div>
+
+
+<!-- EXPENSES -->
+
+<div class="card">
+
+<h2>Add Business Expense</h2>
+
+<input id="edate" type="date">
+
+<input
+  id="edesc"
+  placeholder="What did you buy? e.g. Chicken, rice, packaging"
+>
+
+<div class="grid">
+
+<select id="ecat"></select>
+
+<input
+  id="eamount"
+  type="number"
+  step="0.01"
+  min="0"
+  placeholder="Amount £"
+>
+
+</div>
+
+<select id="epay">
+
+<option>Bank</option>
+<option>Cash</option>
+<option>Card</option>
+<option>Other</option>
+
+</select>
+
+<button onclick="saveExpense()">
+Save Expense
+</button>
+
+<p id="emsg" class="small"></p>
+
+</div>
+
+
+<!-- SUMMARY -->
+
+<div class="card">
+
+<h2>Monthly Summary</h2>
+
+<div id="summary"></div>
+
+</div>
+
+</section>
+
+</main>
+
+
+<script>
+
+/* ================================
+   SUPABASE CONFIGURATION
+================================ */
+
+const SB_URL =
+'https://hybzvzjlqtutpfdjmlrs.supabase.co';
+
+const SB_KEY =
+'sb_publishable_M5calSkAuwig75rCOv6Btg_ksprSBBm';
+
+const sb =
+supabase.createClient(SB_URL,SB_KEY);
+
+
+/* Southern Aroma business ID */
+
+const biz =
+'71fee22f-ebe8-4fff-a49d-5ff89fe11875';
+
+
+/* Authorised family emails */
+
+const allowedEmails = [
+  'southernaromauk@gmail.com',
+  'incode.com1234@gmail.com'
+];
+
+
+const $ = id => document.getElementById(id);
+
+
+/* ================================
+   DATE
+================================ */
+
+function today(){
+
+  return new Date()
+    .toISOString()
+    .slice(0,10);
+
+}
+
+$('date').value=today();
+$('edate').value=today();
+$('fdate').value=today();
+
+
+/* ================================
+   HELPERS
+================================ */
+
+function setMsg(id,text,ok=false){
+
+  $(id).textContent=text;
+
+  $(id).className =
+    ok
+    ? 'small success'
+    : 'small error';
+
+}
+
+
+function n(id){
+
+  return Math.max(
+    0,
+    Number($(id).value || 0)
+  );
+
+}
+
+
+function escapeHtml(s){
+
+  return String(s).replace(
+    /[&<>"']/g,
+    c => ({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#39;'
+    }[c])
+  );
+
+}
+
+
+/* ================================
+   SIGN UP
+================================ */
+
+async function signup(){
+
+  const email =
+    $('email').value.trim().toLowerCase();
+
+  const password =
+    $('password').value;
+
+  const name =
+    $('name').value.trim();
+
+
+  if(!allowedEmails.includes(email)){
+
+    return setMsg(
+      'msg',
+      'Only the authorised family emails can register.'
+    );
+
+  }
+
+
+  if(password.length < 8){
+
+    return setMsg(
+      'msg',
+      'Password must be at least 8 characters.'
+    );
+
+  }
+
+
+  const r =
+    await sb.auth.signUp({
+
+      email,
+      password,
+
+      options:{
+        data:{
+          full_name:name
+        }
+      }
+
+    });
+
+
+  if(r.error){
+
+    return setMsg(
+      'msg',
+      r.error.message
+    );
+
+  }
+
+
+  setMsg(
+    'msg',
+    'Account created. If email confirmation is enabled, confirm your email, then sign in.',
+    true
+  );
+
+}
+
+
+/* ================================
+   LOGIN
+================================ */
+
+async function login(){
+
+  const email =
+    $('email').value.trim().toLowerCase();
+
+  const password =
+    $('password').value;
+
+
+  if(!allowedEmails.includes(email)){
+
+    return setMsg(
+      'msg',
+      'This email is not authorised.'
+    );
+
+  }
+
+
+  const r =
+    await sb.auth.signInWithPassword({
+
+      email,
+      password
+
+    });
+
+
+  if(r.error){
+
+    return setMsg(
+      'msg',
+      r.error.message
+    );
+
+  }
+
+
+  await boot();
+
+}
+
+
+/* ================================
+   LOGOUT
+================================ */
+
+async function logout(){
+
+  await sb.auth.signOut();
+
+  $('auth').classList.remove('hidden');
+
+  $('app').classList.add('hidden');
+
+}
+
+
+/* ================================
+   START APPLICATION
+================================ */
+
+async function boot(){
+
+  const u =
+    await sb.auth.getUser();
+
+  const user =
+    u.data.user;
+
+
+  if(!user) return;
+
+
+  const p =
+    await sb
+      .from('profiles')
+      .select(
+        'full_name,role,business_id'
+      )
+      .eq('id',user.id)
+      .single();
+
+
+  if(
+    p.error ||
+    p.data?.business_id !== biz
+  ){
+
+    setMsg(
+      'msg',
+      'Your family account is not linked to Southern Aroma yet.'
+    );
+
+    await sb.auth.signOut();
+
+    return;
+
+  }
+
+
+  $('auth').classList.add('hidden');
+
+  $('app').classList.remove('hidden');
+
+
+  await loadCategories();
+
+  await loadSummary();
+
+}
+
+
+/* ================================
+   EXPENSE CATEGORIES
+================================ */
+
+async function loadCategories(){
+
+  const r =
+    await sb
+      .from('expense_categories')
+      .select('id,name')
+      .eq('business_id',biz)
+      .eq('active',true)
+      .order('name');
+
+
+  if(r.error){
+
+    setMsg(
+      'emsg',
+      r.error.message
+    );
+
+    return;
+
+  }
+
+
+  $('ecat').innerHTML =
+    (r.data || [])
+      .map(
+        x =>
+          '<option value="' +
+          x.id +
+          '">' +
+          escapeHtml(x.name) +
+          '</option>'
+      )
+      .join('');
+
+}
+
+
+/* ================================
+   SAVE SALES
+================================ */
+
+async function saveSales(){
+
+  const u =
+    await sb.auth.getUser();
+
+  const user =
+    u.data.user;
+
+
+  if(!user) return;
+
+
+  const row = {
+
+    business_id:biz,
+
+    sales_date:$('date').value,
+
+    clover:n('clover'),
+
+    uber_eats:n('uber_eats'),
+
+    foodhub:n('foodhub'),
+
+    just_eat:n('just_eat'),
+
+    deliveroo:n('deliveroo'),
+
+    cash:n('cash'),
+
+    stripe:n('stripe'),
+
+    notes:$('notes').value.trim(),
+
+    created_by:user.id,
+
+    updated_at:new Date().toISOString()
+
+  };
+
+
+  const r =
+    await sb
+      .from('sales_days')
+      .upsert(
+        row,
+        {
+          onConflict:
+            'business_id,sales_date'
+        }
+      );
+
+
+  if(r.error){
+
+    return setMsg(
+      'salesmsg',
+      r.error.message
+    );
+
+  }
+
+
+  setMsg(
+    'salesmsg',
+    'Sales saved successfully.',
+    true
+  );
+
+
+  await loadSummary();
+
+}
+
+
+/* ================================
+   SAVE PLATFORM FEE
+================================ */
+
+async function saveFee(){
+
+  const u =
+    await sb.auth.getUser();
+
+  const user =
+    u.data.user;
+
+
+  if(!user) return;
+
+
+  const amount =
+    n('famount');
+
+
+  if(!amount){
+
+    return setMsg(
+      'fmsg',
+      'Please enter a fee amount.'
+    );
+
+  }
+
+
+  const row = {
+
+    business_id:biz,
+
+    fee_date:$('fdate').value,
+
+    platform:$('fplatform').value,
+
+    amount,
+
+    notes:$('fnotes').value.trim(),
+
+    created_by:user.id
+
+  };
+
+
+  const r =
+    await sb
+      .from('platform_fees')
+      .insert(row);
+
+
+  if(r.error){
+
+    return setMsg(
+      'fmsg',
+      r.error.message
+    );
+
+  }
+
+
+  setMsg(
+    'fmsg',
+    'Platform fee saved successfully.',
+    true
+  );
+
+
+  $('famount').value='';
+
+  $('fnotes').value='';
+
+
+  await loadSummary();
+
+}
+
+
+/* ================================
+   SAVE EXPENSE
+================================ */
+
+async function saveExpense(){
+
+  const u =
+    await sb.auth.getUser();
+
+  const user =
+    u.data.user;
+
+
+  if(!user) return;
+
+
+  const row = {
+
+    business_id:biz,
+
+    expense_date:$('edate').value,
+
+    description:
+      $('edesc').value.trim(),
+
+    category_id:
+      $('ecat').value,
+
+    amount:
+      n('eamount'),
+
+    payment_method:
+      $('epay').value,
+
+    created_by:user.id
+
+  };
+
+
+  if(
+    !row.description ||
+    !row.amount
+  ){
+
+    return setMsg(
+      'emsg',
+      'Please enter what you bought and the amount.'
+    );
+
+  }
+
+
+  const r =
+    await sb
+      .from('expenses')
+      .insert(row);
+
+
+  if(r.error){
+
+    return setMsg(
+      'emsg',
+      r.error.message
+    );
+
+  }
+
+
+  setMsg(
+    'emsg',
+    'Expense saved successfully.',
+    true
+  );
+
+
+  $('edesc').value='';
+
+  $('eamount').value='';
+
+
+  await loadSummary();
+
+}
+
+
+/* ================================
+   MONTHLY SUMMARY
+================================ */
+
+async function loadSummary(){
+
+  const d =
+    new Date();
+
+
+  const start =
+    new Date(
+      d.getFullYear(),
+      d.getMonth(),
+      1
+    )
+    .toISOString()
+    .slice(0,10);
+
+
+  const end =
+    new Date(
+      d.getFullYear(),
+      d.getMonth()+1,
+      0
+    )
+    .toISOString()
+    .slice(0,10);
+
+
+  const [s,e,f] =
+    await Promise.all([
+
+      sb
+        .from('sales_days')
+        .select(
+          'clover,uber_eats,foodhub,just_eat,deliveroo,cash,stripe'
+        )
+        .eq('business_id',biz)
+        .gte('sales_date',start)
+        .lte('sales_date',end),
+
+
+      sb
+        .from('expenses')
+        .select('amount')
+        .eq('business_id',biz)
+        .gte('expense_date',start)
+        .lte('expense_date',end),
+
+
+      sb
+        .from('platform_fees')
+        .select('amount')
+        .eq('business_id',biz)
+        .gte('fee_date',start)
+        .lte('fee_date',end)
+
+    ]);
+
+
+  if(
+    s.error ||
+    e.error ||
+    f.error
+  ){
+
+    setMsg(
+      'msg',
+      (
+        s.error ||
+        e.error ||
+        f.error
+      ).message
+    );
+
+    return;
+
+  }
+
+
+  const channels = [
+
+    'clover',
+    'uber_eats',
+    'foodhub',
+    'just_eat',
+    'deliveroo',
+    'cash',
+    'stripe'
+
+  ];
+
+
+  const total =
+    (s.data || []).reduce(
+
+      (a,x) =>
+        a +
+        channels.reduce(
+          (b,k) =>
+            b + Number(x[k] || 0),
+          0
+        ),
+
+      0
+
+    );
+
+
+  const exp =
+    (e.data || []).reduce(
+      (a,x) =>
+        a + Number(x.amount || 0),
+      0
+    );
+
+
+  const fees =
+    (f.data || []).reduce(
+      (a,x) =>
+        a + Number(x.amount || 0),
+      0
+    );
+
+
+  const profit =
+    total - exp - fees;
+
+
+  $('sales').textContent =
+    '£' +
+    total.toFixed(2) +
+    ' sales';
+
+
+  $('expenses').textContent =
+    '£' +
+    exp.toFixed(2) +
+    ' expenses';
+
+
+  $('fees').textContent =
+    '£' +
+    fees.toFixed(2) +
+    ' platform fees';
+
+
+  $('profit').textContent =
+    '£' +
+    profit.toFixed(2) +
+    ' estimated profit';
+
+
+  $('summary').innerHTML =
+
+    '<div class="row">' +
+      '<span>Sales</span>' +
+      '<b>£' +
+      total.toFixed(2) +
+      '</b>' +
+    '</div>' +
+
+    '<div class="row">' +
+      '<span>Business expenses</span>' +
+      '<b>£' +
+      exp.toFixed(2) +
+      '</b>' +
+    '</div>' +
+
+    '<div class="row">' +
+      '<span>Platform fees</span>' +
+      '<b>£' +
+      fees.toFixed(2) +
+      '</b>' +
+    '</div>' +
+
+    '<div class="row">' +
+      '<span>Estimated profit</span>' +
+      '<b>£' +
+      profit.toFixed(2) +
+      '</b>' +
+    '</div>' +
+
+    '<div class="small" style="margin-top:10px">' +
+      'Estimated profit = sales − business expenses − platform fees.' +
+    '</div>';
+
+}
+
+
+/* ================================
+   RESTORE SESSION
+================================ */
+
+sb.auth
+  .getSession()
+  .then(({data}) => {
+
+    if(data.session){
+
+      boot();
+
+    }
+
+  });
+
+</script>
+
+</body>
+</html>
