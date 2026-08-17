@@ -2,1119 +2,705 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Southern Aroma - Family Accounts</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Southern Aroma — Family Accounts</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
+:root{
+  --maroon:#7b2d26;
+  --maroon-dark:#5c211c;
+  --turmeric:#c98a2b;
+  --cream:#faf6ef;
+  --card:#ffffff;
+  --ink:#2b2420;
+  --ink-soft:#786a5f;
+  --line:#ece4d8;
+  --good:#3f7d53;
+  --bad:#b23a2e;
+  --radius:16px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box}
 body{
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  background:#f6f3ee;
   margin:0;
-  color:#241f1b
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  background:var(--cream);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
 }
-main{
-  max-width:760px;
-  margin:auto;
-  padding:20px
-}
-.card{
-  background:#fff;
-  border-radius:20px;
-  padding:22px;
-  margin:14px 0;
-  box-shadow:0 3px 18px #00000012
-}
-h1{font-size:27px;margin:0 0 6px}
-h2{margin-top:0}
-.sub,.small{color:#746b63}
+h1,h2,h3{ font-family:'Fraunces',serif; font-weight:700; margin:0; }
+button{ font-family:inherit; }
 
-input,select,button{
-  width:100%;
-  box-sizing:border-box;
-  padding:13px;
-  margin:7px 0;
-  border:1px solid #ddd;
-  border-radius:12px;
-  font-size:16px
-}
-
-button{
-  background:#7b2d26;
+/* ---------- app shell ---------- */
+#shell{ max-width:480px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; background:var(--cream); }
+header.top{
+  background:var(--maroon);
   color:#fff;
+  padding:18px 20px 22px;
+  position:relative;
+}
+header.top .brand{ display:flex; align-items:center; gap:10px; }
+header.top .mark{
+  width:38px;height:38px;border-radius:10px;
+  background:var(--turmeric);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Fraunces',serif;font-weight:700;color:var(--maroon-dark);font-size:19px;
+  flex:none;
+}
+header.top h1{ font-size:19px; color:#fff; line-height:1.15; }
+header.top .tag{ font-size:12.5px; color:#e9d3c8; margin-top:2px; }
+main{ flex:1; padding:16px 16px calc(84px + var(--safe-bottom)); }
+
+.hidden{ display:none !important; }
+
+/* ---------- cards ---------- */
+.card{
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:18px;
+  margin:0 0 14px;
+  box-shadow:0 1px 2px rgba(43,36,32,.06), 0 8px 24px rgba(43,36,32,.05);
+  border:1px solid var(--line);
+}
+
+/* ---------- auth ---------- */
+#authScreen{ padding-top:12vh; }
+.field{ margin:0 0 12px; }
+label.small-label{ display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin:0 0 6px; }
+input,select{
+  width:100%;
+  padding:13px 14px;
+  border:1.5px solid var(--line);
+  border-radius:12px;
+  font-size:16px;
+  background:#fff;
+  color:var(--ink);
+}
+input:focus,select:focus{ outline:none; border-color:var(--maroon); }
+.btn{
+  width:100%;
+  padding:14px;
   border:0;
+  border-radius:12px;
+  font-size:15.5px;
   font-weight:700;
-  cursor:pointer
+  cursor:pointer;
 }
+.btn-primary{ background:var(--maroon); color:#fff; }
+.btn-primary:active{ background:var(--maroon-dark); }
+.btn-secondary{ background:var(--cream); color:var(--maroon); border:1.5px solid var(--line); }
+.btn-row{ display:flex; gap:10px; margin-top:6px; }
+.btn-row .btn{ flex:1; }
+.switch-mode{ text-align:center; margin-top:14px; font-size:13.5px; color:var(--ink-soft); }
+.switch-mode a{ color:var(--maroon); font-weight:600; cursor:pointer; text-decoration:none; }
 
-button.secondary{
-  background:#eee;
-  color:#241f1b
+.msg{ font-size:13.5px; margin-top:10px; text-align:center; min-height:1em; }
+.msg.error{ color:var(--bad); }
+.msg.success{ color:var(--good); }
+
+/* ---------- dashboard ---------- */
+.month-label{ font-size:12.5px; color:var(--ink-soft); font-weight:600; text-transform:uppercase; letter-spacing:.04em; margin-bottom:10px; }
+.stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.stat{
+  background:var(--card);
+  border-radius:14px;
+  padding:14px;
+  border:1px solid var(--line);
 }
+.stat .label{ font-size:12px; color:var(--ink-soft); font-weight:600; }
+.stat .value{ font-family:'Fraunces',serif; font-size:22px; font-weight:700; margin-top:4px; }
+.stat.profit{ background:var(--maroon); border-color:var(--maroon); grid-column:1 / -1; }
+.stat.profit .label{ color:#e9d3c8; }
+.stat.profit .value{ color:#fff; font-size:28px; }
+.stat.profit .value.neg{ color:#f6c9c0; }
 
-.grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px
+.today-strip{
+  display:flex; align-items:center; justify-content:space-between;
+  background:#fff5e8; border:1px solid #eddcbb; border-radius:12px;
+  padding:12px 14px; margin-top:12px; font-size:13.5px;
 }
+.today-strip b{ font-family:'Fraunces',serif; font-size:15px; }
 
-.hidden{display:none}
-
-.metric{
-  font-size:25px;
-  font-weight:800;
-  margin:5px 0
+.recent-row{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 0; border-bottom:1px solid var(--line); font-size:14px;
 }
+.recent-row:last-child{ border-bottom:0; }
+.recent-row .rtitle{ font-weight:600; }
+.recent-row .rsub{ color:var(--ink-soft); font-size:12.5px; }
+.recent-row .ramt{ font-family:'Fraunces',serif; font-weight:700; }
+.recent-row .ramt.neg{ color:var(--bad); }
+.recent-row .ramt.pos{ color:var(--good); }
+.empty-note{ color:var(--ink-soft); font-size:13.5px; text-align:center; padding:14px 0; }
 
-.row{
-  display:flex;
-  justify-content:space-between;
-  padding:9px 0;
-  border-bottom:1px solid #eee
+/* ---------- entry type selector ---------- */
+.seg{
+  display:flex; background:var(--cream); border-radius:12px; padding:4px; margin-bottom:16px;
+  border:1px solid var(--line);
 }
-
-.success{color:#236b3b}
-.error{color:#a12820}
-
-@media(max-width:520px){
-  .grid{grid-template-columns:1fr}
+.seg button{
+  flex:1; padding:10px 6px; border:0; background:transparent; border-radius:9px;
+  font-size:13.5px; font-weight:700; color:var(--ink-soft); cursor:pointer;
 }
+.seg button.active{ background:var(--maroon); color:#fff; }
+
+.entry-form{ display:none; }
+.entry-form.active{ display:block; }
+.entry-form h3{ font-size:16px; margin-bottom:2px; }
+.entry-form .hint{ font-size:12.5px; color:var(--ink-soft); margin-bottom:14px; }
+
+.channel-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.amt-field{ position:relative; }
+.amt-field .curr{ position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--ink-soft); font-size:15px; pointer-events:none; }
+.amt-field input{ padding-left:26px; }
+.amt-field label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:5px; font-weight:600; }
+
+/* ---------- bottom tabs ---------- */
+nav.tabbar{
+  position:fixed; left:0; right:0; bottom:0;
+  background:#fff; border-top:1px solid var(--line);
+  display:flex; justify-content:center;
+  padding-bottom:var(--safe-bottom);
+  z-index:20;
+}
+nav.tabbar .inner{ max-width:480px; width:100%; display:flex; }
+nav.tabbar button{
+  flex:1; background:none; border:0; padding:10px 4px 8px; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  color:var(--ink-soft); font-size:11.5px; font-weight:600;
+}
+nav.tabbar button .ic{ font-size:19px; line-height:1; }
+nav.tabbar button.active{ color:var(--maroon); }
+
+.section-title{ font-size:18px; margin-bottom:12px; }
+
+/* toast */
+#toast{
+  position:fixed; left:50%; transform:translateX(-50%) translateY(20px);
+  bottom:calc(90px + var(--safe-bottom));
+  background:var(--ink); color:#fff; padding:12px 18px; border-radius:12px;
+  font-size:13.5px; font-weight:600; opacity:0; pointer-events:none;
+  transition:opacity .2s ease, transform .2s ease;
+  z-index:30; max-width:90%; text-align:center;
+}
+#toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+#toast.error{ background:var(--bad); }
+
+.top-actions{ position:absolute; right:16px; top:20px; }
+.top-actions button{ background:rgba(255,255,255,.15); color:#fff; border:0; border-radius:9px; padding:7px 12px; font-size:12px; font-weight:600; cursor:pointer; }
 </style>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-
 <body>
 
-<main>
+<div id="shell">
 
-<div class="card">
-  <h1>Southern Aroma - Family Accounts</h1>
-  <div class="sub">Private family business tracker</div>
-</div>
+  <!-- ============ AUTH ============ -->
+  <section id="authScreen">
+    <main style="padding-top:0">
+      <div class="card" style="text-align:center;padding:26px 20px;">
+        <div class="mark" style="margin:0 auto 12px;width:48px;height:48px;font-size:23px;background:var(--turmeric);border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--maroon-dark);">SA</div>
+        <h1 style="color:var(--ink);font-size:22px;">Southern Aroma</h1>
+        <div style="color:var(--ink-soft);font-size:13.5px;margin-top:4px;">Family accounts — sign in to continue</div>
+      </div>
 
-<section id="auth" class="card">
+      <div class="card">
+        <div id="loginFields">
+          <div class="field">
+            <label class="small-label">Family email</label>
+            <input id="email" type="email" autocomplete="email" placeholder="you@family.com">
+          </div>
+          <div class="field">
+            <label class="small-label">Password</label>
+            <input id="password" type="password" autocomplete="current-password" placeholder="••••••••">
+          </div>
+          <div class="field hidden" id="nameField">
+            <label class="small-label">Your name</label>
+            <input id="name" autocomplete="name" placeholder="e.g. Praneel">
+          </div>
+          <button class="btn btn-primary" id="authSubmit" onclick="login()">Sign in</button>
+          <div class="switch-mode" id="switchToSignup">
+            New here? <a onclick="toggleSignup(true)">Create a family account</a>
+          </div>
+          <div class="switch-mode hidden" id="switchToLogin">
+            Already have an account? <a onclick="toggleSignup(false)">Sign in</a>
+          </div>
+        </div>
+        <p id="msg" class="msg"></p>
+      </div>
+    </main>
+  </section>
 
-  <h2>Family Login</h2>
+  <!-- ============ APP ============ -->
+  <div id="app" class="hidden">
 
-  <input
-    id="email"
-    type="email"
-    autocomplete="email"
-    placeholder="Family email"
-  >
+    <header class="top">
+      <div class="top-actions"><button onclick="logout()">Sign out</button></div>
+      <div class="brand">
+        <div class="mark">SA</div>
+        <div>
+          <h1>Southern Aroma</h1>
+          <div class="tag" id="welcomeTag">Family accounts</div>
+        </div>
+      </div>
+    </header>
 
-  <input
-    id="password"
-    type="password"
-    autocomplete="current-password"
-    placeholder="Password"
-  >
+    <main>
 
-  <input
-    id="name"
-    autocomplete="name"
-    placeholder="Name (new account only)"
-  >
+      <!-- ---- DASHBOARD TAB ---- -->
+      <section id="tab-dashboard">
+        <div class="month-label" id="monthLabel">This month</div>
 
-  <div class="grid">
-    <button onclick="login()">Sign in</button>
-    <button onclick="signup()">Create account</button>
+        <div class="stat-grid">
+          <div class="stat"><div class="label">Sales</div><div class="value" id="statSales">£0.00</div></div>
+          <div class="stat"><div class="label">Expenses</div><div class="value" id="statExpenses">£0.00</div></div>
+          <div class="stat profit">
+            <div class="label">Estimated profit</div>
+            <div class="value" id="statProfit">£0.00</div>
+          </div>
+        </div>
+
+        <div class="today-strip">
+          <span>Today's sales so far</span>
+          <b id="todaySales">£0.00</b>
+        </div>
+
+        <h2 class="section-title" style="margin-top:22px;">Recent activity</h2>
+        <div class="card" id="recentCard">
+          <div class="empty-note">Nothing logged yet — add your first entry below.</div>
+        </div>
+      </section>
+
+      <!-- ---- ADD TAB ---- -->
+      <section id="tab-add" class="hidden">
+        <h2 class="section-title">Add an entry</h2>
+
+        <div class="seg">
+          <button class="active" data-type="sales" onclick="setEntryType('sales')">Sales</button>
+          <button data-type="fee" onclick="setEntryType('fee')">Platform fee</button>
+          <button data-type="expense" onclick="setEntryType('expense')">Expense</button>
+        </div>
+
+        <div class="card">
+
+          <!-- SALES -->
+          <div class="entry-form active" id="form-sales">
+            <h3>Today's sales</h3>
+            <div class="hint">Enter what came in on each channel today.</div>
+
+            <div class="field"><label class="small-label">Date</label><input id="date" type="date"></div>
+
+            <div class="channel-grid">
+              <div class="amt-field"><label>Cash</label><span class="curr">£</span><input id="cash" type="number" step="0.01" min="0" placeholder="0.00"></div>
+              <div class="amt-field"><label>Stripe</label><span class="curr">£</span><input id="stripe" type="number" step="0.01" min="0" placeholder="0.00"></div>
+              <div class="amt-field"><label>Clover</label><span class="curr">£</span><input id="clover" type="number" step="0.01" min="0" placeholder="0.00"></div>
+              <div class="amt-field"><label>Uber Eats</label><span class="curr">£</span><input id="uber_eats" type="number" step="0.01" min="0" placeholder="0.00"></div>
+              <div class="amt-field"><label>FoodHub</label><span class="curr">£</span><input id="foodhub" type="number" step="0.01" min="0" placeholder="0.00"></div>
+              <div class="amt-field"><label>Just Eat</label><span class="curr">£</span><input id="just_eat" type="number" step="0.01" min="0" placeholder="0.00"></div>
+              <div class="amt-field" style="grid-column:1 / -1;"><label>Deliveroo</label><span class="curr">£</span><input id="deliveroo" type="number" step="0.01" min="0" placeholder="0.00"></div>
+            </div>
+
+            <div class="field" style="margin-top:12px;">
+              <label class="small-label">Notes (optional)</label>
+              <input id="notes" placeholder="Anything worth remembering about today">
+            </div>
+
+            <button class="btn btn-primary" onclick="saveSales()">Save today's sales</button>
+          </div>
+
+          <!-- FEE -->
+          <div class="entry-form" id="form-fee">
+            <h3>Platform fee</h3>
+            <div class="hint">Log a commission or fee charged by a delivery platform.</div>
+
+            <div class="field"><label class="small-label">Date</label><input id="fdate" type="date"></div>
+            <div class="field">
+              <label class="small-label">Platform</label>
+              <select id="fplatform">
+                <option>Uber Eats</option><option>FoodHub</option><option>Just Eat</option>
+                <option>Deliveroo</option><option>Other</option>
+              </select>
+            </div>
+            <div class="amt-field field"><label>Fee amount</label><span class="curr">£</span><input id="famount" type="number" step="0.01" min="0" placeholder="0.00"></div>
+            <div class="field">
+              <label class="small-label">Notes (optional)</label>
+              <input id="fnotes" placeholder="e.g. weekly commission">
+            </div>
+            <button class="btn btn-primary" onclick="saveFee()">Save platform fee</button>
+          </div>
+
+          <!-- EXPENSE -->
+          <div class="entry-form" id="form-expense">
+            <h3>Business expense</h3>
+            <div class="hint">Ingredients, packaging, supplies, anything spent for the business.</div>
+
+            <div class="field"><label class="small-label">Date</label><input id="edate" type="date"></div>
+            <div class="field">
+              <label class="small-label">What did you buy?</label>
+              <input id="edesc" placeholder="e.g. Chicken, rice, packaging">
+            </div>
+            <div class="field">
+              <label class="small-label">Category</label>
+              <select id="ecat"></select>
+            </div>
+            <div class="amt-field field"><label>Amount</label><span class="curr">£</span><input id="eamount" type="number" step="0.01" min="0" placeholder="0.00"></div>
+            <div class="field">
+              <label class="small-label">Paid with</label>
+              <select id="epay"><option>Bank</option><option>Cash</option><option>Card</option><option>Other</option></select>
+            </div>
+            <button class="btn btn-primary" onclick="saveExpense()">Save expense</button>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ---- SUMMARY TAB ---- -->
+      <section id="tab-summary" class="hidden">
+        <h2 class="section-title" id="summaryTitle">Monthly summary</h2>
+        <div class="card">
+          <div id="summaryBody"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <nav class="tabbar">
+      <div class="inner">
+        <button class="active" data-tab="dashboard" onclick="setTab('dashboard')"><span class="ic">⌂</span>Dashboard</button>
+        <button data-tab="add" onclick="setTab('add')"><span class="ic">＋</span>Add</button>
+        <button data-tab="summary" onclick="setTab('summary')"><span class="ic">Σ</span>Summary</button>
+      </div>
+    </nav>
+
   </div>
 
-  <p id="msg" class="small"></p>
-
-</section>
-
-<section id="app" class="hidden">
-
-<div class="card">
-
-  <div class="small">This month</div>
-
-  <div id="sales" class="metric">
-    £0.00 sales
-  </div>
-
-  <div id="expenses" class="metric">
-    £0.00 expenses
-  </div>
-
-  <div id="fees" class="metric">
-    £0.00 platform fees
-  </div>
-
-  <div id="profit" class="metric">
-    £0.00 estimated profit
-  </div>
-
-  <button class="secondary" onclick="logout()">
-    Sign out
-  </button>
-
 </div>
 
-
-<!-- SALES -->
-
-<div class="card">
-
-<h2>Today's Sales</h2>
-
-<div class="grid">
-
-<input id="date" type="date">
-
-<input
-  id="notes"
-  placeholder="Notes (optional)"
->
-
-</div>
-
-<div class="grid">
-
-<input
-  id="clover"
-  type="number"
-  step="0.01"
-  min="0"
-  placeholder="Clover £"
->
-
-<input
-  id="uber_eats"
-  type="number"
-  step="0.01"
-  min="0"
-  placeholder="Uber Eats £"
->
-
-<input
-  id="foodhub"
-  type="number"
-  step="0.01"
-  min="0"
-  placeholder="FoodHub £"
->
-
-<input
-  id="just_eat"
-  type="number"
-  step="0.01"
-  min="0"
-  placeholder="Just Eat £"
->
-
-<input
-  id="deliveroo"
-  type="number"
-  step="0.01"
-  min="0"
-  placeholder="Deliveroo £"
->
-
-<input
-  id="cash"
-  type="number"
-  step="0.01"
-  min="0"
-  placeholder="Cash £"
->
-
-<input
-  id="stripe"
-  type="number"
-  step="0.01"
-  min="0"
-  placeholder="Stripe £"
->
-
-</div>
-
-<button onclick="saveSales()">
-Save Today's Sales
-</button>
-
-<p id="salesmsg" class="small"></p>
-
-</div>
-
-
-<!-- PLATFORM FEES -->
-
-<div class="card">
-
-<h2>Platform Fees</h2>
-
-<div class="grid">
-
-<input id="fdate" type="date">
-
-<select id="fplatform">
-<option>Uber Eats</option>
-<option>FoodHub</option>
-<option>Just Eat</option>
-<option>Deliveroo</option>
-<option>Other</option>
-</select>
-
-<input
-  id="famount"
-  type="number"
-  step="0.01"
-  min="0"
-  placeholder="Fee amount £"
->
-
-<input
-  id="fnotes"
-  placeholder="Notes (optional)"
->
-
-</div>
-
-<button onclick="saveFee()">
-Save Platform Fee
-</button>
-
-<p id="fmsg" class="small"></p>
-
-</div>
-
-
-<!-- EXPENSES -->
-
-<div class="card">
-
-<h2>Add Business Expense</h2>
-
-<input id="edate" type="date">
-
-<input
-  id="edesc"
-  placeholder="What did you buy? e.g. Chicken, rice, packaging"
->
-
-<div class="grid">
-
-<select id="ecat"></select>
-
-<input
-  id="eamount"
-  type="number"
-  step="0.01"
-  min="0"
-  placeholder="Amount £"
->
-
-</div>
-
-<select id="epay">
-
-<option>Bank</option>
-<option>Cash</option>
-<option>Card</option>
-<option>Other</option>
-
-</select>
-
-<button onclick="saveExpense()">
-Save Expense
-</button>
-
-<p id="emsg" class="small"></p>
-
-</div>
-
-
-<!-- SUMMARY -->
-
-<div class="card">
-
-<h2>Monthly Summary</h2>
-
-<div id="summary"></div>
-
-</div>
-
-</section>
-
-</main>
-
+<div id="toast"></div>
 
 <script>
 
 /* ================================
    SUPABASE CONFIGURATION
 ================================ */
+const SB_URL = 'https://hybzvzjlqtutpfdjmlrs.supabase.co';
+const SB_KEY = 'sb_publishable_M5calSkAuwig75rCOv6Btg_ksprSBBm';
+const sb = supabase.createClient(SB_URL, SB_KEY);
 
-const SB_URL =
-'https://hybzvzjlqtutpfdjmlrs.supabase.co';
-
-const SB_KEY =
-'sb_publishable_M5calSkAuwig75rCOv6Btg_ksprSBBm';
-
-const sb =
-supabase.createClient(SB_URL,SB_KEY);
-
-
-/* Southern Aroma business ID */
-
-const biz =
-'71fee22f-ebe8-4fff-a49d-5ff89fe11875';
-
-
-/* Authorised family emails */
-
-const allowedEmails = [
-  'southernaromauk@gmail.com',
-  'incode.com1234@gmail.com'
-];
-
+const biz = '71fee22f-ebe8-4fff-a49d-5ff89fe11875';
+const allowedEmails = ['southernaromauk@gmail.com', 'incode.com1234@gmail.com'];
 
 const $ = id => document.getElementById(id);
-
+let isSignupMode = false;
 
 /* ================================
-   DATE
+   TOAST
 ================================ */
-
-function today(){
-
-  return new Date()
-    .toISOString()
-    .slice(0,10);
-
+let toastTimer;
+function toast(text, isError){
+  const t = $('toast');
+  t.textContent = text;
+  t.className = isError ? 'error show' : 'show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 2600);
 }
 
-$('date').value=today();
-$('edate').value=today();
-$('fdate').value=today();
+/* ================================
+   DATE DEFAULTS
+================================ */
+function today(){ return new Date().toISOString().slice(0,10); }
+$('date') && ($('date').value = today());
 
+/* ================================
+   AUTH UI TOGGLES
+================================ */
+function toggleSignup(on){
+  isSignupMode = on;
+  $('nameField').classList.toggle('hidden', !on);
+  $('authSubmit').textContent = on ? 'Create account' : 'Sign in';
+  $('authSubmit').onclick = on ? signup : login;
+  $('switchToSignup').classList.toggle('hidden', on);
+  $('switchToLogin').classList.toggle('hidden', !on);
+  $('msg').textContent = '';
+}
+
+function setMsg(text, ok){
+  $('msg').textContent = text;
+  $('msg').className = ok ? 'msg success' : 'msg error';
+}
+
+async function signup(){
+  const email = $('email').value.trim().toLowerCase();
+  const password = $('password').value;
+  const name = $('name').value.trim();
+
+  if(!allowedEmails.includes(email)) return setMsg('Only authorised family emails can register.');
+  if(password.length < 8) return setMsg('Password must be at least 8 characters.');
+  if(!name) return setMsg('Please enter your name.');
+
+  const r = await sb.auth.signUp({ email, password, options:{ data:{ full_name:name } } });
+  if(r.error) return setMsg(r.error.message);
+  setMsg('Account created. Confirm your email if asked, then sign in.', true);
+}
+
+async function login(){
+  const email = $('email').value.trim().toLowerCase();
+  const password = $('password').value;
+
+  if(!allowedEmails.includes(email)) return setMsg('This email is not authorised.');
+
+  const r = await sb.auth.signInWithPassword({ email, password });
+  if(r.error) return setMsg(r.error.message);
+  await boot();
+}
+
+async function logout(){
+  await sb.auth.signOut();
+  $('app').classList.add('hidden');
+  $('authScreen').classList.remove('hidden');
+  $('email').value=''; $('password').value='';
+}
+
+/* ================================
+   TABS
+================================ */
+function setTab(name){
+  ['dashboard','add','summary'].forEach(t=>{
+    $('tab-'+t).classList.toggle('hidden', t!==name);
+  });
+  document.querySelectorAll('nav.tabbar button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.tab===name);
+  });
+  if(name==='summary') loadSummary();
+  if(name==='dashboard') loadDashboard();
+}
+
+function setEntryType(type){
+  document.querySelectorAll('.seg button').forEach(b=> b.classList.toggle('active', b.dataset.type===type));
+  ['sales','fee','expense'].forEach(t=> $('form-'+t).classList.toggle('active', t===type));
+}
 
 /* ================================
    HELPERS
 ================================ */
-
-function setMsg(id,text,ok=false){
-
-  $(id).textContent=text;
-
-  $(id).className =
-    ok
-    ? 'small success'
-    : 'small error';
-
-}
-
-
-function n(id){
-
-  return Math.max(
-    0,
-    Number($(id).value || 0)
-  );
-
-}
-
-
+function n(id){ return Math.max(0, Number($(id).value || 0)); }
 function escapeHtml(s){
-
-  return String(s).replace(
-    /[&<>"']/g,
-    c => ({
-      '&':'&amp;',
-      '<':'&lt;',
-      '>':'&gt;',
-      '"':'&quot;',
-      "'":'&#39;'
-    }[c])
-  );
-
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-
+function fmt(v){ return '£' + Number(v||0).toFixed(2); }
 
 /* ================================
-   SIGN UP
+   BOOT
 ================================ */
-
-async function signup(){
-
-  const email =
-    $('email').value.trim().toLowerCase();
-
-  const password =
-    $('password').value;
-
-  const name =
-    $('name').value.trim();
-
-
-  if(!allowedEmails.includes(email)){
-
-    return setMsg(
-      'msg',
-      'Only the authorised family emails can register.'
-    );
-
-  }
-
-
-  if(password.length < 8){
-
-    return setMsg(
-      'msg',
-      'Password must be at least 8 characters.'
-    );
-
-  }
-
-
-  const r =
-    await sb.auth.signUp({
-
-      email,
-      password,
-
-      options:{
-        data:{
-          full_name:name
-        }
-      }
-
-    });
-
-
-  if(r.error){
-
-    return setMsg(
-      'msg',
-      r.error.message
-    );
-
-  }
-
-
-  setMsg(
-    'msg',
-    'Account created. If email confirmation is enabled, confirm your email, then sign in.',
-    true
-  );
-
-}
-
-
-/* ================================
-   LOGIN
-================================ */
-
-async function login(){
-
-  const email =
-    $('email').value.trim().toLowerCase();
-
-  const password =
-    $('password').value;
-
-
-  if(!allowedEmails.includes(email)){
-
-    return setMsg(
-      'msg',
-      'This email is not authorised.'
-    );
-
-  }
-
-
-  const r =
-    await sb.auth.signInWithPassword({
-
-      email,
-      password
-
-    });
-
-
-  if(r.error){
-
-    return setMsg(
-      'msg',
-      r.error.message
-    );
-
-  }
-
-
-  await boot();
-
-}
-
-
-/* ================================
-   LOGOUT
-================================ */
-
-async function logout(){
-
-  await sb.auth.signOut();
-
-  $('auth').classList.remove('hidden');
-
-  $('app').classList.add('hidden');
-
-}
-
-
-/* ================================
-   START APPLICATION
-================================ */
-
 async function boot(){
-
-  const u =
-    await sb.auth.getUser();
-
-  const user =
-    u.data.user;
-
-
+  const u = await sb.auth.getUser();
+  const user = u.data.user;
   if(!user) return;
 
-
-  const p =
-    await sb
-      .from('profiles')
-      .select(
-        'full_name,role,business_id'
-      )
-      .eq('id',user.id)
-      .single();
-
-
-  if(
-    p.error ||
-    p.data?.business_id !== biz
-  ){
-
-    setMsg(
-      'msg',
-      'Your family account is not linked to Southern Aroma yet.'
-    );
-
+  const p = await sb.from('profiles').select('full_name,role,business_id').eq('id',user.id).single();
+  if(p.error || p.data?.business_id !== biz){
+    setMsg('Your family account is not linked to Southern Aroma yet.');
     await sb.auth.signOut();
-
     return;
-
   }
 
-
-  $('auth').classList.add('hidden');
-
+  $('authScreen').classList.add('hidden');
   $('app').classList.remove('hidden');
+  $('welcomeTag').textContent = p.data.full_name ? ('Hi ' + p.data.full_name + ' — family accounts') : 'Family accounts';
 
+  $('fdate').value = today();
+  $('edate').value = today();
 
   await loadCategories();
-
-  await loadSummary();
-
+  await loadDashboard();
+  setTab('dashboard');
 }
-
 
 /* ================================
    EXPENSE CATEGORIES
 ================================ */
-
 async function loadCategories(){
-
-  const r =
-    await sb
-      .from('expense_categories')
-      .select('id,name')
-      .eq('business_id',biz)
-      .eq('active',true)
-      .order('name');
-
-
-  if(r.error){
-
-    setMsg(
-      'emsg',
-      r.error.message
-    );
-
-    return;
-
-  }
-
-
-  $('ecat').innerHTML =
-    (r.data || [])
-      .map(
-        x =>
-          '<option value="' +
-          x.id +
-          '">' +
-          escapeHtml(x.name) +
-          '</option>'
-      )
-      .join('');
-
+  const r = await sb.from('expense_categories').select('id,name').eq('business_id',biz).eq('active',true).order('name');
+  if(r.error){ toast(r.error.message, true); return; }
+  $('ecat').innerHTML = (r.data||[]).map(x=> '<option value="'+x.id+'">'+escapeHtml(x.name)+'</option>').join('');
 }
 
-
 /* ================================
-   SAVE SALES
+   SAVE: SALES
 ================================ */
-
 async function saveSales(){
-
-  const u =
-    await sb.auth.getUser();
-
-  const user =
-    u.data.user;
-
-
+  const u = await sb.auth.getUser();
+  const user = u.data.user;
   if(!user) return;
 
-
   const row = {
-
-    business_id:biz,
-
-    sales_date:$('date').value,
-
-    clover:n('clover'),
-
-    uber_eats:n('uber_eats'),
-
-    foodhub:n('foodhub'),
-
-    just_eat:n('just_eat'),
-
-    deliveroo:n('deliveroo'),
-
-    cash:n('cash'),
-
-    stripe:n('stripe'),
-
-    notes:$('notes').value.trim(),
-
-    created_by:user.id,
-
-    updated_at:new Date().toISOString()
-
+    business_id: biz,
+    sales_date: $('date').value,
+    clover: n('clover'), uber_eats: n('uber_eats'), foodhub: n('foodhub'),
+    just_eat: n('just_eat'), deliveroo: n('deliveroo'), cash: n('cash'), stripe: n('stripe'),
+    notes: $('notes').value.trim(),
+    created_by: user.id,
+    updated_at: new Date().toISOString()
   };
 
+  const r = await sb.from('sales_days').upsert(row, { onConflict:'business_id,sales_date' });
+  if(r.error) return toast(r.error.message, true);
 
-  const r =
-    await sb
-      .from('sales_days')
-      .upsert(
-        row,
-        {
-          onConflict:
-            'business_id,sales_date'
-        }
-      );
-
-
-  if(r.error){
-
-    return setMsg(
-      'salesmsg',
-      r.error.message
-    );
-
-  }
-
-
-  setMsg(
-    'salesmsg',
-    'Sales saved successfully.',
-    true
-  );
-
-
-  await loadSummary();
-
+  toast('Sales saved ✓');
+  ['clover','uber_eats','foodhub','just_eat','deliveroo','cash','stripe','notes'].forEach(id=> $(id).value='');
+  $('date').value = today();
+  await loadDashboard();
 }
 
-
 /* ================================
-   SAVE PLATFORM FEE
+   SAVE: FEE
 ================================ */
-
 async function saveFee(){
-
-  const u =
-    await sb.auth.getUser();
-
-  const user =
-    u.data.user;
-
-
+  const u = await sb.auth.getUser();
+  const user = u.data.user;
   if(!user) return;
 
-
-  const amount =
-    n('famount');
-
-
-  if(!amount){
-
-    return setMsg(
-      'fmsg',
-      'Please enter a fee amount.'
-    );
-
-  }
-
+  const amount = n('famount');
+  if(!amount) return toast('Enter a fee amount.', true);
 
   const row = {
-
-    business_id:biz,
-
-    fee_date:$('fdate').value,
-
-    platform:$('fplatform').value,
-
-    amount,
-
-    notes:$('fnotes').value.trim(),
-
-    created_by:user.id
-
+    business_id: biz, fee_date: $('fdate').value, platform: $('fplatform').value,
+    amount, notes: $('fnotes').value.trim(), created_by: user.id
   };
 
+  const r = await sb.from('platform_fees').insert(row);
+  if(r.error) return toast(r.error.message, true);
 
-  const r =
-    await sb
-      .from('platform_fees')
-      .insert(row);
-
-
-  if(r.error){
-
-    return setMsg(
-      'fmsg',
-      r.error.message
-    );
-
-  }
-
-
-  setMsg(
-    'fmsg',
-    'Platform fee saved successfully.',
-    true
-  );
-
-
-  $('famount').value='';
-
-  $('fnotes').value='';
-
-
-  await loadSummary();
-
+  toast('Platform fee saved ✓');
+  $('famount').value=''; $('fnotes').value='';
+  await loadDashboard();
 }
 
-
 /* ================================
-   SAVE EXPENSE
+   SAVE: EXPENSE
 ================================ */
-
 async function saveExpense(){
-
-  const u =
-    await sb.auth.getUser();
-
-  const user =
-    u.data.user;
-
-
+  const u = await sb.auth.getUser();
+  const user = u.data.user;
   if(!user) return;
 
-
   const row = {
-
-    business_id:biz,
-
-    expense_date:$('edate').value,
-
-    description:
-      $('edesc').value.trim(),
-
-    category_id:
-      $('ecat').value,
-
-    amount:
-      n('eamount'),
-
-    payment_method:
-      $('epay').value,
-
-    created_by:user.id
-
+    business_id: biz, expense_date: $('edate').value, description: $('edesc').value.trim(),
+    category_id: $('ecat').value, amount: n('eamount'), payment_method: $('epay').value, created_by: user.id
   };
 
+  if(!row.description || !row.amount) return toast('Enter what you bought and the amount.', true);
 
-  if(
-    !row.description ||
-    !row.amount
-  ){
+  const r = await sb.from('expenses').insert(row);
+  if(r.error) return toast(r.error.message, true);
 
-    return setMsg(
-      'emsg',
-      'Please enter what you bought and the amount.'
-    );
-
-  }
-
-
-  const r =
-    await sb
-      .from('expenses')
-      .insert(row);
-
-
-  if(r.error){
-
-    return setMsg(
-      'emsg',
-      r.error.message
-    );
-
-  }
-
-
-  setMsg(
-    'emsg',
-    'Expense saved successfully.',
-    true
-  );
-
-
-  $('edesc').value='';
-
-  $('eamount').value='';
-
-
-  await loadSummary();
-
+  toast('Expense saved ✓');
+  $('edesc').value=''; $('eamount').value='';
+  await loadDashboard();
 }
-
 
 /* ================================
-   MONTHLY SUMMARY
+   DASHBOARD (this month + recent + today)
 ================================ */
+async function loadDashboard(){
+  const d = new Date();
+  const start = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0,10);
+  const end = new Date(d.getFullYear(), d.getMonth()+1, 0).toISOString().slice(0,10);
+  const monthName = d.toLocaleString('default',{month:'long'});
+  $('monthLabel').textContent = monthName + ' ' + d.getFullYear();
 
-async function loadSummary(){
+  const channels = ['clover','uber_eats','foodhub','just_eat','deliveroo','cash','stripe'];
 
-  const d =
-    new Date();
+  const [s,e,f] = await Promise.all([
+    sb.from('sales_days').select('sales_date,clover,uber_eats,foodhub,just_eat,deliveroo,cash,stripe').eq('business_id',biz).gte('sales_date',start).lte('sales_date',end).order('sales_date',{ascending:false}),
+    sb.from('expenses').select('expense_date,description,amount').eq('business_id',biz).gte('expense_date',start).lte('expense_date',end).order('expense_date',{ascending:false}),
+    sb.from('platform_fees').select('fee_date,platform,amount').eq('business_id',biz).gte('fee_date',start).lte('fee_date',end).order('fee_date',{ascending:false})
+  ]);
 
+  if(s.error||e.error||f.error){ toast((s.error||e.error||f.error).message, true); return; }
 
-  const start =
-    new Date(
-      d.getFullYear(),
-      d.getMonth(),
-      1
-    )
-    .toISOString()
-    .slice(0,10);
+  const totalSales = (s.data||[]).reduce((a,x)=> a + channels.reduce((b,k)=> b+Number(x[k]||0),0), 0);
+  const totalExp = (e.data||[]).reduce((a,x)=> a+Number(x.amount||0), 0);
+  const totalFees = (f.data||[]).reduce((a,x)=> a+Number(x.amount||0), 0);
+  const profit = totalSales - totalExp - totalFees;
 
+  $('statSales').textContent = fmt(totalSales);
+  $('statExpenses').textContent = fmt(totalExp + totalFees);
+  $('statProfit').textContent = fmt(profit);
+  $('statProfit').classList.toggle('neg', profit < 0);
 
-  const end =
-    new Date(
-      d.getFullYear(),
-      d.getMonth()+1,
-      0
-    )
-    .toISOString()
-    .slice(0,10);
+  const todayRow = (s.data||[]).find(x=> x.sales_date===today());
+  const todayTotal = todayRow ? channels.reduce((b,k)=> b+Number(todayRow[k]||0),0) : 0;
+  $('todaySales').textContent = fmt(todayTotal);
 
+  // recent activity: merge sales/expenses/fees, sort by date desc, take 6
+  const items = [];
+  (s.data||[]).forEach(x=> items.push({date:x.sales_date, title:'Daily sales', sub:'All channels', amt:channels.reduce((b,k)=>b+Number(x[k]||0),0), pos:true}));
+  (e.data||[]).forEach(x=> items.push({date:x.expense_date, title:x.description||'Expense', sub:'Expense', amt:Number(x.amount||0), pos:false}));
+  (f.data||[]).forEach(x=> items.push({date:x.fee_date, title:x.platform+' fee', sub:'Platform fee', amt:Number(x.amount||0), pos:false}));
+  items.sort((a,b)=> (a.date<b.date?1:-1));
 
-  const [s,e,f] =
-    await Promise.all([
-
-      sb
-        .from('sales_days')
-        .select(
-          'clover,uber_eats,foodhub,just_eat,deliveroo,cash,stripe'
-        )
-        .eq('business_id',biz)
-        .gte('sales_date',start)
-        .lte('sales_date',end),
-
-
-      sb
-        .from('expenses')
-        .select('amount')
-        .eq('business_id',biz)
-        .gte('expense_date',start)
-        .lte('expense_date',end),
-
-
-      sb
-        .from('platform_fees')
-        .select('amount')
-        .eq('business_id',biz)
-        .gte('fee_date',start)
-        .lte('fee_date',end)
-
-    ]);
-
-
-  if(
-    s.error ||
-    e.error ||
-    f.error
-  ){
-
-    setMsg(
-      'msg',
-      (
-        s.error ||
-        e.error ||
-        f.error
-      ).message
-    );
-
-    return;
-
+  const recentCard = $('recentCard');
+  if(items.length===0){
+    recentCard.innerHTML = '<div class="empty-note">Nothing logged yet — add your first entry below.</div>';
+  } else {
+    recentCard.innerHTML = items.slice(0,6).map(x=>
+      '<div class="recent-row">'+
+        '<div><div class="rtitle">'+escapeHtml(x.title)+'</div><div class="rsub">'+x.date+'</div></div>'+
+        '<div class="ramt '+(x.pos?'pos':'neg')+'">'+(x.pos?'+':-')+fmt(x.amt)+'</div>'+
+      '</div>'
+    ).join('');
   }
-
-
-  const channels = [
-
-    'clover',
-    'uber_eats',
-    'foodhub',
-    'just_eat',
-    'deliveroo',
-    'cash',
-    'stripe'
-
-  ];
-
-
-  const total =
-    (s.data || []).reduce(
-
-      (a,x) =>
-        a +
-        channels.reduce(
-          (b,k) =>
-            b + Number(x[k] || 0),
-          0
-        ),
-
-      0
-
-    );
-
-
-  const exp =
-    (e.data || []).reduce(
-      (a,x) =>
-        a + Number(x.amount || 0),
-      0
-    );
-
-
-  const fees =
-    (f.data || []).reduce(
-      (a,x) =>
-        a + Number(x.amount || 0),
-      0
-    );
-
-
-  const profit =
-    total - exp - fees;
-
-
-  $('sales').textContent =
-    '£' +
-    total.toFixed(2) +
-    ' sales';
-
-
-  $('expenses').textContent =
-    '£' +
-    exp.toFixed(2) +
-    ' expenses';
-
-
-  $('fees').textContent =
-    '£' +
-    fees.toFixed(2) +
-    ' platform fees';
-
-
-  $('profit').textContent =
-    '£' +
-    profit.toFixed(2) +
-    ' estimated profit';
-
-
-  $('summary').innerHTML =
-
-    '<div class="row">' +
-      '<span>Sales</span>' +
-      '<b>£' +
-      total.toFixed(2) +
-      '</b>' +
-    '</div>' +
-
-    '<div class="row">' +
-      '<span>Business expenses</span>' +
-      '<b>£' +
-      exp.toFixed(2) +
-      '</b>' +
-    '</div>' +
-
-    '<div class="row">' +
-      '<span>Platform fees</span>' +
-      '<b>£' +
-      fees.toFixed(2) +
-      '</b>' +
-    '</div>' +
-
-    '<div class="row">' +
-      '<span>Estimated profit</span>' +
-      '<b>£' +
-      profit.toFixed(2) +
-      '</b>' +
-    '</div>' +
-
-    '<div class="small" style="margin-top:10px">' +
-      'Estimated profit = sales − business expenses − platform fees.' +
-    '</div>';
-
 }
 
+/* ================================
+   SUMMARY TAB (fuller breakdown)
+=============================== */
+async function loadSummary(){
+  const d = new Date();
+  const start = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0,10);
+  const end = new Date(d.getFullYear(), d.getMonth()+1, 0).toISOString().slice(0,10);
+  $('summaryTitle').textContent = d.toLocaleString('default',{month:'long'}) + ' ' + d.getFullYear() + ' summary';
+
+  const channels = ['clover','uber_eats','foodhub','just_eat','deliveroo','cash','stripe'];
+  const labels = {clover:'Clover', uber_eats:'Uber Eats', foodhub:'FoodHub', just_eat:'Just Eat', deliveroo:'Deliveroo', cash:'Cash', stripe:'Stripe'};
+
+  const [s,e,f] = await Promise.all([
+    sb.from('sales_days').select(channels.join(',')).eq('business_id',biz).gte('sales_date',start).lte('sales_date',end),
+    sb.from('expenses').select('amount').eq('business_id',biz).gte('expense_date',start).lte('expense_date',end),
+    sb.from('platform_fees').select('amount').eq('business_id',biz).gte('fee_date',start).lte('fee_date',end)
+  ]);
+
+  if(s.error||e.error||f.error){ toast((s.error||e.error||f.error).message, true); return; }
+
+  const perChannel = {};
+  channels.forEach(k=> perChannel[k] = (s.data||[]).reduce((a,x)=> a+Number(x[k]||0),0));
+  const totalSales = channels.reduce((a,k)=> a+perChannel[k], 0);
+  const totalExp = (e.data||[]).reduce((a,x)=> a+Number(x.amount||0), 0);
+  const totalFees = (f.data||[]).reduce((a,x)=> a+Number(x.amount||0), 0);
+  const profit = totalSales - totalExp - totalFees;
+
+  let html = '<div style="font-size:13px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px;">Sales by channel</div>';
+  channels.forEach(k=>{
+    html += '<div class="recent-row"><span>'+labels[k]+'</span><b>'+fmt(perChannel[k])+'</b></div>';
+  });
+  html += '<div class="recent-row" style="border-top:2px solid var(--line);margin-top:4px;padding-top:12px;"><span><b>Total sales</b></span><b>'+fmt(totalSales)+'</b></div>';
+  html += '<div class="recent-row"><span>Business expenses</span><b>'+fmt(totalExp)+'</b></div>';
+  html += '<div class="recent-row"><span>Platform fees</span><b>'+fmt(totalFees)+'</b></div>';
+  html += '<div class="recent-row" style="border-top:2px solid var(--line);margin-top:4px;padding-top:12px;"><span><b>Estimated profit</b></span><b style="color:'+(profit<0?'var(--bad)':'var(--good)')+'">'+fmt(profit)+'</b></div>';
+  html += '<div class="empty-note" style="text-align:left;padding-top:10px;">Estimated profit = sales − business expenses − platform fees.</div>';
+
+  $('summaryBody').innerHTML = html;
+}
 
 /* ================================
    RESTORE SESSION
 ================================ */
-
-sb.auth
-  .getSession()
-  .then(({data}) => {
-
-    if(data.session){
-
-      boot();
-
-    }
-
-  });
-
+sb.auth.getSession().then(({data})=>{ if(data.session) boot(); });
 </script>
-
 </body>
 </html>
